@@ -137,11 +137,63 @@ async function processBangumiData(data: any, status: string) {
 	return detailedItems;
 }
 
+type AnimeItem = (typeof localAnimeList)[number];
+
+const STATUS_ORDER = ["watching", "completed", "planned", "onhold", "dropped"];
+
+function parseDateToTimestamp(dateStr?: string) {
+	if (!dateStr) return 0;
+	const trimmed = dateStr.trim();
+	if (!trimmed) return 0;
+	const parsed = Date.parse(trimmed);
+	if (!Number.isNaN(parsed)) return parsed;
+	const yearMatch = trimmed.match(/^(\d{4})/);
+	if (yearMatch) {
+		return new Date(Number.parseInt(yearMatch[1], 10), 0, 1).getTime();
+	}
+	return 0;
+}
+
+function sortGroupByDateDesc(list: AnimeItem[]) {
+	return [...list].sort((a, b) => {
+		const timeA = parseDateToTimestamp(a.startDate || a.year);
+		const timeB = parseDateToTimestamp(b.startDate || b.year);
+		return timeB - timeA;
+	});
+}
+
+function sortAnimeListByStatus(animeItems: typeof localAnimeList) {
+	const grouped = new Map<string, typeof localAnimeList>();
+	for (const anime of animeItems) {
+		const status = anime.status || "others";
+		if (!grouped.has(status)) {
+			grouped.set(status, []);
+		}
+		grouped.get(status)!.push(anime);
+	}
+
+	const ordered: typeof localAnimeList = [];
+	for (const status of STATUS_ORDER) {
+		if (grouped.has(status)) {
+			ordered.push(...sortGroupByDateDesc(grouped.get(status)!));
+			grouped.delete(status);
+		}
+	}
+
+	Array.from(grouped.keys())
+		.sort()
+		.forEach((status) => {
+			ordered.push(...sortGroupByDateDesc(grouped.get(status)!));
+		});
+
+	return ordered;
+}
+
 // 根据模式获取番剧列表
 let animeList: typeof localAnimeList = [];
 if (ANIME_MODE === "local") {
 	// 使用本地配置
-	animeList = localAnimeList;
+	animeList = sortAnimeListByStatus(localAnimeList);
 } else {
 	// 使用Bangumi API（默认模式）
 	// 获取与处理在看列表（type=3）看过列表（type=2）
@@ -155,7 +207,7 @@ if (ANIME_MODE === "local") {
 		? await processBangumiData(completedData, "completed")
 		: [];
 
-	animeList = [...watchingList, ...completedList];
+	animeList = sortAnimeListByStatus([...watchingList, ...completedList]);
 }
 
 // 获取状态的翻译文本和样式
