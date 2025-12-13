@@ -12,7 +12,7 @@ import Key from "../../i18n/i18nKey";
 import { i18n } from "../../i18n/translation";
 
 // 音乐播放器模式，可选 "local" 或 "meting"，从本地配置中获取或使用默认值 "meting"
-let mode = musicPlayerConfig.mode ?? "meting";
+let mode = musicPlayerConfig.mode ?? "local";
 // Meting API 地址，从配置中获取或使用默认地址(bilibili.uno(由哔哩哔哩松坂有希公益管理)),服务器在海外,部分音乐平台可能不支持并且速度可能慢,也可以自建Meting API
 let meting_api =
 	musicPlayerConfig.meting_api ??
@@ -36,7 +36,7 @@ let currentTime = 0;
 // 歌曲总时长，默认为 0
 let duration = 0;
 // 音量，默认为 0.7
-let volume = 0.7;
+let volume = 0.3;
 // 是否静音，默认为 false
 let isMuted = false;
 // 是否正在加载，默认为 false
@@ -44,7 +44,7 @@ let isLoading = false;
 // 是否随机播放，默认为 false
 let isShuffled = false;
 // 循环模式，0: 不循环, 1: 单曲循环, 2: 列表循环，默认为 0
-let isRepeating = 0;
+let isRepeating = 1;
 // 错误信息，默认为空字符串
 let errorMessage = "";
 // 是否显示错误信息，默认为 false
@@ -68,27 +68,11 @@ let volumeBar: HTMLElement;
 const localPlaylist = [
 	{
 		id: 1,
-		title: "ひとり上手",
-		artist: "Kaya",
-		cover: "assets/music/cover/hitori.jpg",
-		url: "assets/music/url/hitori.mp3",
+		title: "羽根",
+		artist: "折戸伸治",
+		cover: "assets/music/cover/air.jpg",
+		url: "assets/music/url/羽根.mp3",
 		duration: 240,
-	},
-	{
-		id: 2,
-		title: "眩耀夜行",
-		artist: "スリーズブーケ",
-		cover: "assets/music/cover/xryx.jpg",
-		url: "assets/music/url/xryx.mp3",
-		duration: 180,
-	},
-	{
-		id: 3,
-		title: "春雷の頃",
-		artist: "22/7",
-		cover: "assets/music/cover/cl.jpg",
-		url: "assets/music/url/cl.mp3",
-		duration: 200,
 	},
 ];
 
