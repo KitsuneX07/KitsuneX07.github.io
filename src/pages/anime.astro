@@ -23,6 +23,9 @@ const BANGUMI_API_BASE = "https://api.bgm.tv";
 // 获取番剧数据模式(不需要更改，请在主配置src/config.ts中修改)
 const ANIME_MODE = siteConfig.anime?.mode || "bangumi";
 
+// 前端分页大小（同构到客户端脚本）
+const PAGE_SIZE = 10;
+
 // 获取单个条目相关人员信息
 async function fetchSubjectPersons(subjectId: number) {
 	try {
@@ -210,6 +213,11 @@ if (ANIME_MODE === "local") {
 	animeList = sortAnimeListByStatus([...watchingList, ...completedList]);
 }
 
+const initialPagination = {
+	total: animeList.length,
+	totalPages: Math.max(1, Math.ceil(animeList.length / PAGE_SIZE)),
+};
+
 // 获取状态的翻译文本和样式
 function getStatusInfo(status: string) {
 	switch (status) {
@@ -304,13 +312,29 @@ const stats = {
             </p>
           </div>
         ) : animeList.length > 0 ? (
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-            {animeList.map(anime => {
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6" data-anime-list data-page-size={PAGE_SIZE}>
+            {animeList.map((anime, index) => {
               const statusInfo = getStatusInfo(anime.status);
               const progressPercent = anime.totalEpisodes > 0 ? (anime.progress / anime.totalEpisodes) * 100 : 0;
+              const isInitialVisible = index < PAGE_SIZE;
+              const cardClasses = [
+                "anime-item",
+                "group",
+                "relative",
+                "bg-[var(--card-bg)]",
+                "border",
+                "border-[var(--line-divider)]",
+                "rounded-[var(--radius-large)]",
+                "overflow-hidden",
+                "transition-all",
+                "duration-300",
+                "hover:shadow-lg",
+                "hover:scale-[1.02]",
+                isInitialVisible ? "" : "hidden",
+              ].filter(Boolean).join(" ");
               
               return (
-                <div class="group relative bg-[var(--card-bg)] border border-[var(--line-divider)] rounded-[var(--radius-large)] overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02]" data-anime-status={anime.status}>
+                <div class={cardClasses} data-anime-status={anime.status} data-anime-index={index}>
                   <!-- 封面区域 - 竖屏比例 -->
                   <div class="relative aspect-[2/3] overflow-hidden">
                     <a href={anime.link} target="_blank" rel="noopener noreferrer" class="block w-full h-full">
@@ -383,6 +407,21 @@ const stats = {
               );
             })}
           </div>
+
+          <div class="anime-pagination mt-6" data-pagination-root>
+            <button class="pagination-btn" data-pagination="prev" disabled>上一页</button>
+            <div class="pagination-info">
+              <span>第</span>
+              <span data-pagination-current>{initialPagination.total > 0 ? 1 : 0}</span>
+              <span>/</span>
+              <span data-pagination-total>{initialPagination.totalPages}</span>
+              <span>页</span>
+            </div>
+            <div class="pagination-summary" data-pagination-summary>
+              共 {initialPagination.total} 部
+            </div>
+            <button class="pagination-btn" data-pagination="next" disabled={initialPagination.totalPages <= 1}>下一页</button>
+          </div>
         ) : (
           <div class="text-center py-12">
             <div class="text-5xl mb-4">😢</div>
@@ -444,98 +483,221 @@ const stats = {
     }
     
     .anime-item.hidden {
+      display: none !important;
       opacity: 0;
       transform: scale(0.95);
       pointer-events: none;
     }
+
+    .anime-pagination {
+      margin-top: 1.5rem;
+      padding: 0.75rem 1.25rem;
+      border: 1px solid var(--line-divider);
+      border-radius: var(--radius-large);
+      background: var(--btn-regular-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--line-divider);
+      border-radius: var(--radius-large);
+      background: var(--btn-regular-bg);
+      color: var(--btn-content);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--btn-hover-bg);
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .pagination-info {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-weight: 600;
+      color: var(--btn-content);
+    }
+
+    .pagination-summary {
+      font-size: 0.875rem;
+      color: var(--btn-content);
+      opacity: 0.8;
+    }
   </style>
 
-  <!-- 过滤功能脚本 -->
+  <!-- 过滤与分页脚本 -->
   <script is:inline>
-    // 事件监听器存储，用于防止重复绑定
-    let filterEventListeners = [];
-    
-    // 初始化过滤功能
-    function initFilterButtons() {
-      const filterTags = document.querySelectorAll('.filter-tag');
-      
-      // 移除之前的事件监听器
-      filterEventListeners.forEach(listener => {
-        const [element, type, handler] = listener;
-        element.removeEventListener(type, handler);
-      });
-      filterEventListeners = [];
-      
-      // 过滤功能
-      filterTags.forEach(tag => {
-        const clickHandler = function() {
-          // 移除所有active类
-          filterTags.forEach(t => t.classList.remove('active'));
-          // 添加active类到当前点击的标签
-          this.classList.add('active');
-          
-          const status = this.getAttribute('data-status');
-          
-          // 获取所有动漫项
-          const animeItems = document.querySelectorAll('[data-anime-status]');
-          
-          // 过滤动漫项
-          animeItems.forEach(item => {
-            if (status === 'all') {
-              item.classList.remove('hidden');
-            } else {
-              const itemStatus = item.getAttribute('data-anime-status');
-              if (itemStatus === status) {
-                item.classList.remove('hidden');
-              } else {
-                item.classList.add('hidden');
-              }
+    (() => {
+      const DEFAULT_PAGE_SIZE = 10;
+      let pageSize = DEFAULT_PAGE_SIZE;
+      let filterEventListeners = [];
+      let paginationEventListeners = [];
+      let animeItems = [];
+      const state = {
+        status: 'all',
+        page: 1,
+      };
+
+      function resolvePageSize() {
+        const listEl = document.querySelector('[data-anime-list]');
+        if (!listEl) return DEFAULT_PAGE_SIZE;
+        const attr = listEl.getAttribute('data-page-size');
+        const parsed = attr ? Number.parseInt(attr, 10) : Number.NaN;
+        if (Number.isNaN(parsed) || parsed <= 0) {
+          return DEFAULT_PAGE_SIZE;
+        }
+        return parsed;
+      }
+
+      function cleanupListeners(store) {
+        store.forEach(([element, type, handler]) => {
+          element.removeEventListener(type, handler);
+        });
+        return [];
+      }
+
+      function selectAnimeItems() {
+        animeItems = Array.from(document.querySelectorAll('[data-anime-status]'));
+        pageSize = resolvePageSize();
+      }
+
+      function getFilteredItems() {
+        if (state.status === 'all') return animeItems;
+        return animeItems.filter((item) => item.getAttribute('data-anime-status') === state.status);
+      }
+
+      function updatePaginationUI(filteredItems) {
+        const paginationRoot = document.querySelector('[data-pagination-root]');
+        if (!paginationRoot) return;
+        const currentEl = paginationRoot.querySelector('[data-pagination-current]');
+        const totalEl = paginationRoot.querySelector('[data-pagination-total]');
+        const summaryEl = paginationRoot.querySelector('[data-pagination-summary]');
+        const prevBtn = paginationRoot.querySelector('[data-pagination="prev"]');
+        const nextBtn = paginationRoot.querySelector('[data-pagination="next"]');
+        const filteredCount = filteredItems.length;
+        const totalPages = filteredCount === 0 ? 1 : Math.ceil(filteredCount / pageSize);
+        const displayPage = filteredCount === 0 ? 0 : state.page;
+        if (currentEl) currentEl.textContent = String(displayPage);
+        if (totalEl) totalEl.textContent = filteredCount === 0 ? '0' : String(totalPages);
+        if (summaryEl) summaryEl.textContent = '共 ' + filteredCount + ' 部';
+        if (prevBtn) prevBtn.disabled = state.page <= 1 || filteredCount === 0;
+        if (nextBtn) nextBtn.disabled = state.page >= totalPages || filteredCount === 0;
+      }
+
+      function applyVisibility() {
+        if (!animeItems.length) return;
+        const filteredItems = getFilteredItems();
+        const totalPages = filteredItems.length === 0 ? 1 : Math.ceil(filteredItems.length / pageSize);
+        if (state.page > totalPages) state.page = totalPages;
+        if (state.page < 1) state.page = 1;
+        animeItems.forEach((item) => item.classList.add('hidden'));
+        const startIndex = (state.page - 1) * pageSize;
+        filteredItems.slice(startIndex, startIndex + pageSize).forEach((item) => {
+          item.classList.remove('hidden');
+        });
+        updatePaginationUI(filteredItems);
+      }
+
+      function initFilterButtons() {
+        const filterTags = document.querySelectorAll('.filter-tag');
+        filterEventListeners = cleanupListeners(filterEventListeners);
+        filterTags.forEach((tag) => {
+          const handler = () => {
+            filterTags.forEach((t) => t.classList.remove('active'));
+            tag.classList.add('active');
+            state.status = tag.getAttribute('data-status') || 'all';
+            state.page = 1;
+            applyVisibility();
+          };
+          tag.addEventListener('click', handler);
+          filterEventListeners.push([tag, 'click', handler]);
+        });
+      }
+
+      function initPaginationControls() {
+        const paginationRoot = document.querySelector('[data-pagination-root]');
+        paginationEventListeners = cleanupListeners(paginationEventListeners);
+        if (!paginationRoot) return;
+        const prevBtn = paginationRoot.querySelector('[data-pagination="prev"]');
+        const nextBtn = paginationRoot.querySelector('[data-pagination="next"]');
+        if (prevBtn) {
+          const handler = () => {
+            if (state.page > 1) {
+              state.page -= 1;
+              applyVisibility();
             }
-          });
-        };
-        
-        tag.addEventListener('click', clickHandler);
-        filterEventListeners.push([tag, 'click', clickHandler]);
-      });
-      
-      console.log('Filter buttons initialized with', filterTags.length, 'buttons');
-    }
-    
-    // 页面加载时初始化
-    document.addEventListener('DOMContentLoaded', initFilterButtons);
-    
-    // Swup页面切换后重新初始化
-    function setupSwupListeners() {
-      if (window.swup) {
-        // 使用Swup hooks监听页面切换事件
-        window.swup.hooks.on('content:replace', function() {
-          console.log('Swup content replaced - reinitializing filter buttons');
-          setTimeout(initFilterButtons, 150);
-        });
-        
-        window.swup.hooks.on('page:view', function() {
-          console.log('Swup page view - reinitializing filter buttons');
-          setTimeout(initFilterButtons, 150);
-        });
-        
-        window.swup.hooks.on('animation:in:end', function() {
-          console.log('Swup animation ended - reinitializing filter buttons');
-          setTimeout(initFilterButtons, 200);
-        });
+          };
+          prevBtn.addEventListener('click', handler);
+          paginationEventListeners.push([prevBtn, 'click', handler]);
+        }
+        if (nextBtn) {
+          const handler = () => {
+            const filteredItems = getFilteredItems();
+            const totalPages = filteredItems.length === 0 ? 1 : Math.ceil(filteredItems.length / pageSize);
+            if (state.page < totalPages) {
+              state.page += 1;
+              applyVisibility();
+            }
+          };
+          nextBtn.addEventListener('click', handler);
+          paginationEventListeners.push([nextBtn, 'click', handler]);
+        }
       }
-    }
-    
-    // 初始化Swup监听器
-    if (typeof window !== 'undefined') {
-      if (window.swup) {
-        setupSwupListeners();
+
+      function initialize() {
+        selectAnimeItems();
+        if (!animeItems.length) return;
+        state.page = 1;
+        initFilterButtons();
+        initPaginationControls();
+        applyVisibility();
+      }
+
+      const kickoff = () => requestAnimationFrame(initialize);
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', kickoff, { once: true });
       } else {
-        // 如果Swup尚未初始化，监听启用事件
-        document.addEventListener('swup:enable', function() {
-          console.log('Swup enabled - setting up listeners');
-          setupSwupListeners();
-        });
+        kickoff();
       }
-    }
+
+      let swupListenersInitialized = false;
+      function setupSwupListeners() {
+        if (swupListenersInitialized || typeof window === 'undefined') return;
+        if (!window.swup || !window.swup.hooks) return;
+        const reinit = () => setTimeout(kickoff, 150);
+        window.swup.hooks.on('content:replace', reinit);
+        window.swup.hooks.on('page:view', reinit);
+        window.swup.hooks.on('animation:in:end', () => setTimeout(kickoff, 220));
+        swupListenersInitialized = true;
+      }
+
+      if (typeof window !== 'undefined') {
+        if (window.swup && window.swup.hooks) {
+          setupSwupListeners();
+        } else {
+          document.addEventListener('swup:enable', () => {
+            setupSwupListeners();
+          });
+        }
+      }
+    })();
   </script>
+
 </MainGridLayout>
