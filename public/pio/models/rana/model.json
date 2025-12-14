@@ -1,0 +1,45 @@
+{
+    "version": "1.0.0",
+    "model": "rana_event250.moc",
+    "textures": [
+        "textures/texture_00.png",
+        "textures/texture_01.png"
+    ],
+    "physics": "rana_event250.physics.json",
+    "layout": {
+        "center_x": 0.0,
+        "center_y": 0.0,
+        "width": 2.0
+    },
+    "hit_areas_custom": {
+        "head_x": [-0.35, 0.6],
+        "head_y": [0.19, -0.2],
+        "body_x": [-0.3, -0.25],
+        "body_y": [0.3, -0.9]
+    },
+    "expressions": [
+        {"name": "angry01", "file": "expressions/angry01.exp.json"},
+        {"name": "cry01", "file": "expressions/cry01.exp.json"},
+        {"name": "smile01", "file": "expressions/smile01.exp.json"},
+        {"name": "shy", "file": "expressions/shame01.exp.json"},
+        {"name": "sparkle", "file": "expressions/kime01.exp.json"}
+    ],
+    "motions": {
+        "idle": [
+            {"file": "motions/idle01.mtn", "fade_in": 2000, "fade_out": 2000},
+            {"file": "motions/nf01.mtn", "fade_in": 2000, "fade_out": 2000},
+            {"file": "motions/nf02.mtn", "fade_in": 2000, "fade_out": 2000}
+        ],
+        "tap_body": [
+            {"file": "motions/bye01.mtn", "sound": ""},
+            {"file": "motions/kime01.mtn", "sound": ""},
+            {"file": "motions/surprised01.mtn", "sound": ""},
+            {"file": "motions/smile02.mtn", "sound": ""},
+            {"file": "motions/thinking01.mtn", "sound": ""}
+        ],
+        "tap_head": [
+            {"file": "motions/sad01.mtn"},
+            {"file": "motions/angry01.mtn"}
+        ]
+    }
+}

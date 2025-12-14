@@ -18,14 +18,14 @@ import { LinkPreset } from "./types/config";
 
 // 定义站点语言
 const SITE_LANG = "zh_CN"; // 语言代码，例如：'en', 'zh_CN', 'ja' 等。
-const SITE_TIMEZONE =8;//设置你的网站时区 from -12 to 12 default in UTC+8
+const SITE_TIMEZONE = 8; //设置你的网站时区 from -12 to 12 default in UTC+8
 export const siteConfig: SiteConfig = {
 	title: "KitsuneX07",
 	subtitle: "",
 	siteURL: "https://kitsunex07.github.io/", // 请替换为你的站点URL，以斜杠结尾
 
 	timeZone: SITE_TIMEZONE,
-	
+
 	lang: SITE_LANG,
 
 	themeColor: {
@@ -89,12 +89,8 @@ export const siteConfig: SiteConfig = {
 	banner: {
 		// 支持单张图片或图片数组，当数组长度 > 1 时自动启用轮播
 		src: {
-			desktop: [
-				"/assets/desktop-banner/kamio-misuzu.webp",
-			], // 桌面横幅图片
-			mobile: [
-				"/assets/mobile-banner/Isekaijoucho.webp",
-			], // 移动横幅图片
+			desktop: ["/assets/desktop-banner/kamio-misuzu.webp"], // 桌面横幅图片
+			mobile: ["/assets/mobile-banner/Isekaijoucho.webp"], // 移动横幅图片
 		}, // 使用本地横幅图片
 
 		position: "center", // 等同于 object-position，仅支持 'top', 'center', 'bottom'。默认为 'center'
@@ -122,11 +118,9 @@ export const siteConfig: SiteConfig = {
 
 		homeText: {
 			enable: true, // 在主页显示自定义文本
-			title: "その繰り返し", // 主页横幅主标题
+			title: "copy, paste, delete", // 主页横幅主标题
 
-			subtitle: [
-				"copy, paste, delete",
-			],
+			subtitle: ["その繰り返し"],
 			typewriter: {
 				enable: true, // 启用副标题打字机效果
 
@@ -174,12 +168,8 @@ export const siteConfig: SiteConfig = {
 };
 export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 	src: {
-		desktop: [
-			"/assets/desktop-banner/kamio-misuzu.webp",
-		], // 桌面横幅图片
-		mobile: [
-			"/assets/mobile-banner/Isekaijoucho.webp",
-		], // 移动横幅图片
+		desktop: ["/assets/desktop-banner/kamio-misuzu.webp"], // 桌面横幅图片
+		mobile: ["/assets/mobile-banner/Isekaijoucho.webp"], // 移动横幅图片
 	}, // 使用本地横幅图片
 	position: "center", // 壁纸位置，等同于 object-position
 	carousel: {
@@ -469,24 +459,19 @@ export const sakuraConfig: SakuraConfig = {
 // Pio 看板娘配置
 export const pioConfig: import("./types/config").PioConfig = {
 	enable: true, // 启用看板娘
-	models: ["/pio/models/pio/model.json"], // 默认模型路径
+	models: ["/pio/models/rana/model.json"], // 默认模型路径
 	position: "left", // 默认位置在右侧
-	width: 280, // 默认宽度
-	height: 250, // 默认高度
+	width: 320, // 默认宽度
+	height: 300, // 默认高度
 	mode: "draggable", // 默认为可拖拽模式
 	hiddenOnMobile: true, // 默认在移动设备上隐藏
 	dialog: {
-		welcome: "Welcome to Mizuki Website!", // 欢迎词
-		touch: [
-			"What are you doing?",
-			"Stop touching me!",
-			"HENTAI!",
-			"Don't bully me like that!",
-		], // 触摸提示
+		welcome: "Welcome to My Website!", // 欢迎词
+		touch: ["What are you doing?", "Stop touching me!"], // 触摸提示
 		home: "Click here to go back to homepage!", // 首页提示
 		skin: ["Want to see my new outfit?", "The new outfit looks great~"], // 换装提示
 		close: "QWQ See you next time~", // 关闭提示
-		link: "https://github.com/matsuzaka-yuki/Mizuki", // 关于链接
+		link: "https://github.com/KitsuneX07", // 关于链接
 	},
 };
 
